@@ -16,7 +16,8 @@ var state = {
   waitingForStroke: false,
   beatCount: 0,
   lastBeatTime: 0,
-  strokeDeadline: 0
+  strokeDeadline: 0,
+  gen: 0
 };
 
 function getBPM(kanjiData, round) {
@@ -72,6 +73,7 @@ async function playReadyGo() {
 
 // ゲーム開始
 function startGame(grade) {
+  state.gen++;
   state.grade = grade;
   state.kanjiList = getRandomKanji(grade, KANJI_PER_GAME);
   state.kanjiIndex = 0;
@@ -84,6 +86,7 @@ function startGame(grade) {
 
 // 漢字開始
 async function startKanji() {
+  var myGen = state.gen;
   var kanji = state.kanjiList[state.kanjiIndex];
   state.round = 1;
   state.totalMiss = 0;
@@ -98,13 +101,16 @@ async function startKanji() {
 
   // 漢字プレビューアニメ
   await CanvasModule.playPreview(kanji);
+  if (state.gen !== myGen) return;
   await sleep(300);
+  if (state.gen !== myGen) return;
 
   startRound();
 }
 
 // Round開始
 async function startRound() {
+  var myGen = state.gen;
   var kanji = state.kanjiList[state.kanjiIndex];
   state.strokeIndex = 0;
   state.missCount = 0;
@@ -128,6 +134,7 @@ async function startRound() {
 
   // 用意ドンカウントダウン
   await playReadyGo();
+  if (state.gen !== myGen) return;
 
   var bpm = getBPM(kanji, state.round);
   state.stopBeat = Audio.startBeatScheduler(bpm, function (beatTime) {
@@ -206,13 +213,16 @@ function handleStrokeResult(correct, onTime) {
   if (state.strokeIndex >= kanji.strokes.length) {
     CanvasModule.setEnabled(false);
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
-    setTimeout(onRoundComplete, 400);
+    var _gen = state.gen;
+    setTimeout(function () { if (state.gen === _gen) onRoundComplete(); }, 400);
   }
 }
 
 async function onRoundComplete() {
+  var myGen = state.gen;
   UI.showRoundResult(state.missCount);
   await sleep(1100);
+  if (state.gen !== myGen) return;
 
   if (state.round < 3) {
     state.round++;
@@ -223,6 +233,7 @@ async function onRoundComplete() {
 }
 
 async function onKanjiComplete() {
+  var myGen = state.gen;
   var kanji = state.kanjiList[state.kanjiIndex];
   var bonus = calcBonus(state.totalMiss);
   var stars = calcStars(state.totalMiss);
@@ -234,6 +245,7 @@ async function onKanjiComplete() {
   UI.setScore(state.score);
   UI.showKanjiClear(kanji.kanji, stars, state.kanjiScore);
   await sleep(2200);
+  if (state.gen !== myGen) return;
 
   state.kanjiIndex++;
   if (state.kanjiIndex < state.kanjiList.length) {
@@ -296,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('btn-grade-select').addEventListener('click', function () {
     Audio.stopBGM();
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    state.gen++;
     UI.show('grade');
   });
 
@@ -309,6 +322,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('btn-top').addEventListener('click', function () {
     Audio.stopBGM();
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    state.gen++;
     UI.show('title');
   });
 
@@ -319,6 +333,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
     hideCountdown();
+    state.gen++;
     UI.show('title');
   });
 
@@ -328,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
     hideCountdown();
+    state.gen++;
     // この漢字で獲得したスコアを差し引いてリセット
     state.score = Math.max(0, state.score - state.kanjiScore);
     UI.setScore(state.score);
