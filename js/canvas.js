@@ -170,22 +170,27 @@ var CanvasModule = (function () {
     var cx = mainCanvas.width / 2;
     var cy = mainCanvas.height / 2;
     mainCtx.save();
-    mainCtx.lineWidth = 8;
     if (correct) {
-      mainCtx.strokeStyle = 'rgba(67,160,71,0.85)';
+      mainCtx.fillStyle = 'rgba(67,160,71,0.10)';
+      mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+      mainCtx.strokeStyle = 'rgba(67,160,71,0.92)';
+      mainCtx.lineWidth = 14;
       mainCtx.beginPath();
-      mainCtx.arc(cx, cy, 32, 0, Math.PI * 2);
+      mainCtx.arc(cx, cy, 56, 0, Math.PI * 2);
       mainCtx.stroke();
     } else {
-      mainCtx.strokeStyle = 'rgba(229,57,53,0.85)';
-      var r = 24;
+      mainCtx.fillStyle = 'rgba(229,57,53,0.10)';
+      mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+      mainCtx.strokeStyle = 'rgba(229,57,53,0.92)';
+      mainCtx.lineWidth = 14;
+      var r = 40;
       mainCtx.beginPath();
       mainCtx.moveTo(cx - r, cy - r); mainCtx.lineTo(cx + r, cy + r);
       mainCtx.moveTo(cx + r, cy - r); mainCtx.lineTo(cx - r, cy + r);
       mainCtx.stroke();
     }
     mainCtx.restore();
-    setTimeout(clearMain, 320);
+    setTimeout(clearMain, 700);
   }
 
   return {
