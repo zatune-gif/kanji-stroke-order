@@ -124,7 +124,8 @@ async function startRound() {
   // 毎ラウンド書き順見本を表示
   await CanvasModule.playPreview(kanji);
   if (state.gen !== myGen) return;
-  await sleep(200);
+  CanvasModule.clearMain();
+  await sleep(300);
   if (state.gen !== myGen) return;
 
   // 用意ドンカウントダウン
