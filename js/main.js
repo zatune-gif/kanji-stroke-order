@@ -328,6 +328,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
     hideCountdown();
+    // この漢字で獲得したスコアを差し引いてリセット
+    state.score = Math.max(0, state.score - state.kanjiScore);
+    UI.setScore(state.score);
     startKanji();
   });
 });
