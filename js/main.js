@@ -86,6 +86,7 @@ function startRound() {
   state.waitingForStroke = false;
   state.beatCount = 0;
 
+  UI.show('game');
   UI.setRoundDisplay(state.round);
   UI.setMissCount(0);
   UI.resetBeat();
