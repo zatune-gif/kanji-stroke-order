@@ -124,11 +124,7 @@ async function startRound() {
   CanvasModule.clearMain();
   CanvasModule.setEnabled(false);
 
-  if (state.round <= 2) {
-    CanvasModule.drawGuide(kanji, 0);
-  } else {
-    CanvasModule.clearGuide();
-  }
+  CanvasModule.drawGuide(kanji, 0);
 
   if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
 
@@ -166,9 +162,7 @@ function onBeat(beatTime) {
   CanvasModule.setEnabled(true);
   CanvasModule.clearMain();
 
-  if (state.round <= 2) {
-    CanvasModule.drawGuide(kanji, state.strokeIndex);
-  }
+  CanvasModule.drawGuide(kanji, state.strokeIndex);
 }
 
 // キャンバスモジュールからのコールバック
@@ -204,9 +198,7 @@ function handleStrokeResult(correct, onTime) {
 
   state.strokeIndex++;
 
-  if (state.round <= 2) {
-    CanvasModule.drawGuide(kanji, state.strokeIndex);
-  }
+  CanvasModule.drawGuide(kanji, state.strokeIndex);
 
   if (state.strokeIndex >= kanji.strokes.length) {
     CanvasModule.setEnabled(false);
