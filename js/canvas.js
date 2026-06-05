@@ -8,6 +8,7 @@ var CanvasModule = (function () {
   var onStrokeEnd = null;
   var enabled = false;
   var clearTimer = null;
+  var correctPaths = [];
 
   function init(mainEl, guideEl, callback) {
     mainCanvas = mainEl;
@@ -76,8 +77,9 @@ var CanvasModule = (function () {
     isDrawing = false;
     if (strokePoints.length < 2) { strokePoints = []; return; }
     var dir = detectDirection(strokePoints);
+    var initDir = detectInitialDirection(strokePoints);
     strokePoints = [];
-    if (onStrokeEnd) onStrokeEnd(dir);
+    if (onStrokeEnd) onStrokeEnd(dir, initDir);
   }
 
   function detectDirection(points) {
@@ -92,21 +94,48 @@ var CanvasModule = (function () {
     return DIRS[Math.round(norm / 45) % 8];
   }
 
+  // 折れ筆対応：最初の35%区間の方向も返す
+  function detectInitialDirection(points) {
+    var cutoff = Math.max(3, Math.floor(points.length * 0.35));
+    if (cutoff >= points.length) return null;
+    var start = points[0];
+    var mid = points[cutoff];
+    var dx = mid.x - start.x;
+    var dy = mid.y - start.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 10) return null;
+    var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    var norm = (angle + 360) % 360;
+    return DIRS[Math.round(norm / 45) % 8];
+  }
+
   function isDirectionMatch(detected, expected) {
     if (expected === 'dot') return detected === 'dot';
     var di = DIRS.indexOf(detected);
     var ei = DIRS.indexOf(expected);
     if (di === -1 || ei === -1) return detected === expected;
     var diff = Math.abs(di - ei);
-    return diff <= 2 || diff >= 6;
+    return diff <= 1 || diff >= 7;
+  }
+
+  function clearCorrectStrokes() {
+    correctPaths = [];
+  }
+
+  function addCorrectStroke(pathStr) {
+    correctPaths.push(pathStr);
   }
 
   function clearMain() {
     if (clearTimer !== null) { clearTimeout(clearTimer); clearTimer = null; }
     mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+    var size = mainCanvas.width;
+    for (var i = 0; i < correctPaths.length; i++) {
+      drawStrokePath(mainCtx, correctPaths[i], size, '#BBBBBB', 9);
+    }
   }
 
   function clearGuide() {
+    guideCanvas.style.visibility = 'hidden';
     guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
   }
 
@@ -124,7 +153,8 @@ var CanvasModule = (function () {
   }
 
   function drawGuide(kanjiData, currentStrokeIndex) {
-    clearGuide();
+    guideCanvas.style.visibility = 'visible';
+    guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
     var size = guideCanvas.width;
     for (var i = 0; i < kanjiData.strokes.length; i++) {
       var color, lw;
@@ -139,30 +169,42 @@ var CanvasModule = (function () {
     }
   }
 
-  function drawGhostGuide(kanjiData, currentStrokeIndex) {
-    clearMain();
-    if (currentStrokeIndex < kanjiData.strokes.length) {
-      drawStrokePath(mainCtx, kanjiData.strokes[currentStrokeIndex].path,
-        mainCanvas.width, 'rgba(200,200,200,0.35)', 8);
-    }
-  }
-
   function playPreview(kanjiData) {
     return new Promise(function (resolve) {
       var size = mainCanvas.width;
       var total = kanjiData.strokes.length;
+      if (total === 0) { resolve(); return; }
       var delay = Math.max(500, Math.min(900, 4500 / total));
       var i = 0;
+      var stepTimer = null;
+      var done = false;
+
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(stepTimer);
+        resolve();
+      }
+
+      // ストック数 × delay + 余裕 1 秒で強制終了
+      var safetyTimer = setTimeout(finish, total * delay + 1000);
 
       function step() {
-        if (i >= total) { resolve(); return; }
-        clearMain();
-        for (var j = 0; j < i; j++) {
-          drawStrokePath(mainCtx, kanjiData.strokes[j].path, size, '#BBBBBB', 9);
+        if (done) return;
+        if (i >= total) { clearTimeout(safetyTimer); finish(); return; }
+        try {
+          clearMain();
+          for (var j = 0; j < i; j++) {
+            drawStrokePath(mainCtx, kanjiData.strokes[j].path, size, '#BBBBBB', 9);
+          }
+          drawStrokePath(mainCtx, kanjiData.strokes[i].path, size, '#2C2C2C', 9);
+        } catch (e) {
+          clearTimeout(safetyTimer);
+          finish();
+          return;
         }
-        drawStrokePath(mainCtx, kanjiData.strokes[i].path, size, '#2C2C2C', 9);
         i++;
-        setTimeout(step, delay);
+        stepTimer = setTimeout(step, delay);
       }
       step();
     });
@@ -200,12 +242,12 @@ var CanvasModule = (function () {
     init: init,
     setEnabled: setEnabled,
     clearMain: clearMain,
+    clearCorrectStrokes: clearCorrectStrokes,
+    addCorrectStroke: addCorrectStroke,
     clearGuide: clearGuide,
     drawGuide: drawGuide,
-    drawGhostGuide: drawGhostGuide,
     playPreview: playPreview,
     flashResult: flashResult,
-    isDirectionMatch: isDirectionMatch,
-    detectDirection: detectDirection
+    isDirectionMatch: isDirectionMatch
   };
 })();

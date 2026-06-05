@@ -1,273 +1,289 @@
-var ROUND_MULTIPLIERS = [1.0, 1.3, 1.7];
-var KANJI_PER_GAME = 10;
+var KANJI_PER_GAME = 5;
+var selectedGrade = 1;
+var practiceGrade = 1;
+var resetReturnScreen = 'grade'; // リセット画面からの戻り先
+var pendingResetGrade = null;   // null = 全学年
+
+// ─── クリア管理 ───────────────────────────────────────
+function getClearedSet(grade) {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('cleared_grade_' + grade) || '[]'));
+  } catch (e) { return new Set(); }
+}
+
+function markKanjiCleared(grade, kanji) {
+  var cleared = getClearedSet(grade);
+  cleared.add(kanji);
+  localStorage.setItem('cleared_grade_' + grade, JSON.stringify(Array.from(cleared)));
+}
+
+function resetCleared(grade) {
+  localStorage.removeItem('cleared_grade_' + grade);
+}
+
+function showConfirm(grade) {
+  pendingResetGrade = grade;
+  var label = grade === null ? '全学年' : grade + '年生';
+  document.getElementById('confirm-msg').textContent = label + 'のクリア記録を\nリセットしますか？';
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function hideConfirm() {
+  document.getElementById('confirm-modal').classList.add('hidden');
+}
+
+function returnFromReset() {
+  if (resetReturnScreen === 'practice') {
+    Audio.startPracticeBGM();
+    buildPracticeGrid(practiceGrade);
+    UI.show('practice');
+  } else {
+    Audio.startMenuBGM();
+    updateGradeButtons();
+    UI.show('grade');
+  }
+}
+
+function updateGradeButtons() {
+  document.querySelectorAll('.grade-btn').forEach(function (btn) {
+    var grade = parseInt(btn.getAttribute('data-grade'), 10);
+    var total = getKanjiByGrade(grade).length;
+    var cleared = getClearedSet(grade).size;
+    var el = btn.querySelector('.grade-progress');
+    if (el) el.textContent = cleared + ' / ' + total + ' クリア';
+  });
+}
+// ─────────────────────────────────────────────────────
 
 var state = {
   grade: 1,
   kanjiList: [],
   kanjiIndex: 0,
-  round: 1,
   strokeIndex: 0,
   missCount: 0,
-  totalMiss: 0,
-  score: 0,
-  kanjiScore: 0,
-  kanjiStars: [],
-  stopBeat: null,
+  kanjiRatings: [],
   waitingForStroke: false,
-  beatCount: 0,
-  lastBeatTime: 0,
-  strokeDeadline: 0,
+  isPractice: false,
   gen: 0
 };
 
-function getBPM(kanjiData, round) {
-  // Round1はゆっくり（約3秒/画）、Round3で元速度の75%
-  var multipliers = [0.33, 0.52, 0.75];
-  return Math.round(kanjiData.bpmBase * multipliers[round - 1]);
+function calcRating(missCount) {
+  if (missCount === 0) return 'perfect';
+  if (missCount <= 2) return 'good';
+  return 'try';
 }
 
-function calcStrokeScore(onTime, round) {
-  var base = onTime ? 100 : 60;
-  return Math.round(base * ROUND_MULTIPLIERS[round - 1]);
-}
-
-function calcBonus(totalMiss) {
-  if (totalMiss === 0) return 500;
-  if (totalMiss <= 2) return 200;
-  return 0;
-}
-
-function calcStars(totalMiss) {
-  if (totalMiss === 0) return 3;
-  if (totalMiss <= 3) return 2;
-  return 1;
+function calcOverallRating(ratings) {
+  if (ratings.every(function (r) { return r === 'perfect'; })) return 'perfect';
+  if (ratings.every(function (r) { return r !== 'try'; })) return 'good';
+  return 'try';
 }
 
 function sleep(ms) {
   return new Promise(function (r) { setTimeout(r, ms); });
 }
 
-function showCountdown(text, isGo) {
-  var overlay = document.getElementById('countdown-overlay');
-  var el = document.getElementById('countdown-text');
-  el.textContent = text;
-  el.className = isGo ? 'go' : '';
-  overlay.classList.remove('hidden');
-  // アニメーションをリセット
-  el.style.animation = 'none';
-  el.offsetHeight; // reflow
-  el.style.animation = '';
+// ─── 自由練習 ────────────────────────────────────────
+function buildPracticeGrid(grade) {
+  practiceGrade = grade;
+  var cleared = getClearedSet(grade);
+  var list = getKanjiByGrade(grade);
+
+  document.querySelectorAll('.practice-tab').forEach(function (t) {
+    t.classList.toggle('active', parseInt(t.getAttribute('data-grade'), 10) === grade);
+  });
+
+  var grid = document.getElementById('practice-kanji-grid');
+  grid.innerHTML = '';
+  list.forEach(function (k) {
+    var btn = document.createElement('button');
+    btn.className = 'practice-kanji-btn' + (cleared.has(k.kanji) ? ' cleared' : '');
+    btn.textContent = k.kanji;
+    btn.addEventListener('click', function () { startPracticeGame(k); });
+    grid.appendChild(btn);
+  });
 }
 
-function hideCountdown() {
-  document.getElementById('countdown-overlay').classList.add('hidden');
+function startPracticeGame(kanjiData) {
+  state.gen++;
+  state.isPractice = true;
+  state.kanjiList = [kanjiData];
+  state.kanjiIndex = 0;
+  state.kanjiRatings = [];
+  Audio.startGameBGM();
+  startKanji();
 }
-
-async function playReadyGo() {
-  showCountdown('用意…', false);
-  await sleep(900);
-  showCountdown('ドン！', true);
-  await sleep(600);
-  hideCountdown();
-}
+// ─────────────────────────────────────────────────────
 
 // ゲーム開始
 function startGame(grade) {
   state.gen++;
   state.grade = grade;
-  state.kanjiList = getRandomKanji(grade, KANJI_PER_GAME);
+  state.isPractice = false;
+  Audio.startGameBGM();
+
+  var all = getKanjiByGrade(grade);
+  var cleared = getClearedSet(grade);
+  var available = all.filter(function (k) { return !cleared.has(k.kanji); });
+
+  if (available.length === 0) {
+    resetCleared(grade);
+    available = all;
+  }
+
+  var shuffled = available.slice().sort(function () { return Math.random() - 0.5; });
+  state.kanjiList = shuffled.slice(0, Math.min(KANJI_PER_GAME, shuffled.length));
   state.kanjiIndex = 0;
-  state.score = 0;
-  state.kanjiStars = [];
-  Audio.startBGM();
-  UI.setScore(0);
+  state.kanjiRatings = [];
   startKanji();
 }
 
 // 漢字開始
-function startKanji() {
-  var kanji = state.kanjiList[state.kanjiIndex];
-  state.round = 1;
-  state.totalMiss = 0;
-  state.kanjiScore = 0;
-
-  UI.setKanjiDisplay(kanji.kanji);
-  UI.setRoundDisplay(1);
-  UI.setMissCount(0);
-  UI.resetBeat();
-  UI.show('game');
-  CanvasModule.setEnabled(false);
-
-  startRound();
-}
-
-// Round開始
-async function startRound() {
+async function startKanji() {
   var myGen = state.gen;
-  var kanji = state.kanjiList[state.kanjiIndex];
-  state.strokeIndex = 0;
-  state.missCount = 0;
-  state.waitingForStroke = false;
-  state.beatCount = 0;
+  try {
+    var kanji = state.kanjiList[state.kanjiIndex];
+    if (!kanji) throw new Error('no kanji');
 
-  UI.show('game');
-  UI.setRoundDisplay(state.round);
-  UI.setMissCount(0);
-  UI.resetBeat();
-  CanvasModule.clearMain();
-  CanvasModule.setEnabled(false);
+    state.strokeIndex = 0;
+    state.missCount = 0;
+    state.waitingForStroke = false;
 
-  CanvasModule.drawGuide(kanji, 0);
+    UI.setKanjiDisplay(kanji.kanji);
+    UI.setReadingDisplay(kanji.on, kanji.kun);
+    UI.setQuestionDisplay(state.kanjiIndex + 1, state.kanjiList.length);
+    document.getElementById('stroke-count-display').textContent = (kanji.strokeCount || kanji.strokes.length) + '画';
+    UI.show('game');
 
-  if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    CanvasModule.clearCorrectStrokes();
+    CanvasModule.clearMain();
+    CanvasModule.setEnabled(false);
+    CanvasModule.clearGuide();
 
-  // 毎ラウンド書き順見本を表示
-  await CanvasModule.playPreview(kanji);
-  if (state.gen !== myGen) return;
-  CanvasModule.clearMain();
-  await sleep(300);
-  if (state.gen !== myGen) return;
+    // 画数ゼロの漢字は自動クリア
+    if (!kanji.strokes || kanji.strokes.length === 0) {
+      await sleep(300);
+      if (state.gen === myGen) onKanjiComplete();
+      return;
+    }
 
-  // 用意ドンカウントダウン
-  await playReadyGo();
-  if (state.gen !== myGen) return;
+    document.getElementById('preview-label').classList.add('visible');
+    await CanvasModule.playPreview(kanji);
+    document.getElementById('preview-label').classList.remove('visible');
+    if (state.gen !== myGen) return;
+    CanvasModule.clearMain();
+    await sleep(400);
+    if (state.gen !== myGen) return;
 
-  var bpm = getBPM(kanji, state.round);
-  state.stopBeat = Audio.startBeatScheduler(bpm, function (beatTime) {
-    onBeat(beatTime);
-  });
-}
-
-function onBeat(beatTime) {
-  var kanji = state.kanjiList[state.kanjiIndex];
-  if (!kanji) return;
-
-  UI.pulseBeat();
-
-  // 前のビートで画が完了していなかった場合はミス
-  if (state.waitingForStroke && state.beatCount > 0) {
-    handleStrokeResult(false, false);
+    CanvasModule.drawGuide(kanji, 0);
+    state.waitingForStroke = true;
+    CanvasModule.setEnabled(true);
+  } catch (e) {
+    document.getElementById('preview-label').classList.remove('visible');
+    if (state.gen === myGen) {
+      state.waitingForStroke = true;
+      CanvasModule.setEnabled(true);
+    }
   }
-
-  // 全画完了済みなら何もしない
-  if (state.strokeIndex >= kanji.strokes.length) return;
-
-  // 次の画の入力を待つ
-  state.waitingForStroke = true;
-  state.beatCount++;
-
-  var bpm = getBPM(kanji, state.round);
-  state.strokeDeadline = beatTime + (60 / bpm) * 0.95;
-
-  CanvasModule.setEnabled(true);
-  CanvasModule.clearMain();
-
-  CanvasModule.drawGuide(kanji, state.strokeIndex);
 }
 
-// キャンバスモジュールからのコールバック
-function onStrokeComplete(direction) {
+// キャンバスからのコールバック
+function onStrokeComplete(direction, initDirection) {
   if (!state.waitingForStroke) return;
   state.waitingForStroke = false;
   CanvasModule.setEnabled(false);
-
-  var kanji = state.kanjiList[state.kanjiIndex];
-  var expected = kanji.strokes[state.strokeIndex].direction;
-  var correct = CanvasModule.isDirectionMatch(direction, expected);
-  var onTime = Audio.getCurrentTime() <= state.strokeDeadline;
-
-  handleStrokeResult(correct, onTime);
+  try {
+    var kanji = state.kanjiList[state.kanjiIndex];
+    var expected = kanji.strokes[state.strokeIndex].direction;
+    var correct = CanvasModule.isDirectionMatch(direction, expected) ||
+      (initDirection != null && CanvasModule.isDirectionMatch(initDirection, expected));
+    handleStrokeResult(correct);
+  } catch (e) {
+    state.waitingForStroke = true;
+    CanvasModule.setEnabled(true);
+  }
 }
 
-function handleStrokeResult(correct, onTime) {
+function handleStrokeResult(correct) {
   var kanji = state.kanjiList[state.kanjiIndex];
+  var _gen = state.gen;
 
+  try {
+    CanvasModule.addCorrectStroke(kanji.strokes[state.strokeIndex].path);
+    CanvasModule.clearMain();
+  } catch (e) {}
   if (correct) {
     CanvasModule.flashResult(true);
-    var pts = calcStrokeScore(onTime, state.round);
-    state.score += pts;
-    state.kanjiScore += pts;
-    UI.setScore(state.score);
+    Audio.playCorrect();
   } else {
     CanvasModule.flashResult(false);
     Audio.playMiss();
     state.missCount++;
-    state.totalMiss++;
-    UI.setMissCount(state.missCount);
   }
 
   state.strokeIndex++;
-
-  CanvasModule.drawGuide(kanji, state.strokeIndex);
+  try { CanvasModule.drawGuide(kanji, state.strokeIndex); } catch (e) {}
 
   if (state.strokeIndex >= kanji.strokes.length) {
-    CanvasModule.setEnabled(false);
-    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
-    var _gen = state.gen;
-    setTimeout(function () { if (state.gen === _gen) onRoundComplete(); }, 400);
-  }
-}
-
-async function onRoundComplete() {
-  var myGen = state.gen;
-  UI.showRoundResult(state.missCount);
-  await sleep(1100);
-  if (state.gen !== myGen) return;
-
-  if (state.round < 3) {
-    state.round++;
-    startRound();
+    setTimeout(function () { if (state.gen === _gen) onKanjiComplete(); }, 900);
   } else {
-    await onKanjiComplete();
+    setTimeout(function () {
+      if (state.gen !== _gen) return;
+      state.waitingForStroke = true;
+      CanvasModule.setEnabled(true);
+    }, 800);
   }
 }
 
 async function onKanjiComplete() {
   var myGen = state.gen;
-  var kanji = state.kanjiList[state.kanjiIndex];
-  var bonus = calcBonus(state.totalMiss);
-  var stars = calcStars(state.totalMiss);
-  state.score += bonus;
-  state.kanjiScore += bonus;
-  state.kanjiStars.push(stars);
+  try {
+    var kanji = state.kanjiList[state.kanjiIndex];
+    var rating = calcRating(state.missCount);
+    state.kanjiRatings.push(rating);
+    try { markKanjiCleared(state.isPractice ? kanji.grade : state.grade, kanji.kanji); } catch (e) {}
 
-  Audio.playClear();
-  UI.setScore(state.score);
-  UI.showKanjiClear(kanji.kanji, stars, state.kanjiScore);
-  await sleep(2200);
-  if (state.gen !== myGen) return;
+    if (state.isPractice) {
+      try { buildPracticeGrid(practiceGrade); } catch (e) {}
+      Audio.startPracticeBGM();
+      UI.show('practice');
+      return;
+    }
 
-  state.kanjiIndex++;
-  if (state.kanjiIndex < state.kanjiList.length) {
-    startKanji();
-  } else {
-    onGameComplete();
+    // ゲームモード：結果画面は出さず即次の漢字へ
+    state.kanjiIndex++;
+    if (state.kanjiIndex < state.kanjiList.length) {
+      startKanji();
+    } else {
+      await onGameComplete(myGen);
+    }
+  } catch (e) {
+    if (state.gen !== myGen) return;
+    if (!state.isPractice) {
+      state.kanjiIndex++;
+      if (state.kanjiIndex < state.kanjiList.length) {
+        startKanji();
+      } else {
+        try { await onGameComplete(myGen); } catch (e2) {
+          state.gen++;
+          Audio.startTitleBGM();
+          UI.show('title');
+        }
+      }
+    }
   }
 }
 
-function onGameComplete() {
-  if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
-  Audio.stopBGM();
-  Audio.playGameClear();
+async function onGameComplete(myGen) {
+  if (myGen !== undefined && state.gen !== myGen) return;
+  var overallRating = calcOverallRating(state.kanjiRatings);
+  try { Audio.stopBGM(); } catch (e) {}
+  var jingleDone = Promise.resolve();
+  try { jingleDone = Audio.playResultJingle(overallRating); } catch (e) {}
+  UI.showGameClear(state.kanjiRatings);
+  // ジングルが鳴り終わるまで待つ（最大 5 秒）
+  await Promise.race([jingleDone, sleep(5000)]);
 
-  var totalStars = state.kanjiStars.reduce(function (a, b) { return a + b; }, 0);
-  var bestKey = 'best_grade_' + state.grade;
-  var prevBest = parseInt(localStorage.getItem(bestKey) || '0', 10);
-  var isNewBest = state.score > prevBest;
-  if (isNewBest) localStorage.setItem(bestKey, state.score);
-  var best = isNewBest ? state.score : prevBest;
-
-  UI.showGameClear(state.score, totalStars, state.grade, best, isNewBest);
-
-  document.getElementById('btn-share').onclick = function () {
-    var text = '「漢字リズム」' + state.grade + '年生をプレイ！スコア: ' +
-      state.score.toLocaleString() + '点 ★×' + totalStars + '個 #漢字リズム';
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(function () { alert('コピーしました！'); });
-    } else {
-      prompt('このテキストをコピーしてください', text);
-    }
-  };
 }
 
 // 初期化
@@ -278,65 +294,168 @@ document.addEventListener('DOMContentLoaded', function () {
   var guideCanvas = document.getElementById('guide-canvas');
   CanvasModule.init(mainCanvas, guideCanvas, onStrokeComplete);
 
+  // ミュートボタン
+  var muteBtn = document.getElementById('btn-mute');
+  function updateMuteBtn() {
+    var muted = Audio.getMuted();
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+    muteBtn.classList.toggle('muted', muted);
+  }
+  updateMuteBtn();
+  muteBtn.addEventListener('click', function () {
+    Audio.toggleMute();
+    updateMuteBtn();
+  });
+
+  // 初回タップ：オーバーレイを消して BGM 開始
+  var tapOverlay = document.getElementById('tap-overlay');
+  tapOverlay.addEventListener('click', function () {
+    Audio.resume();
+    Audio.startTitleBGM();
+    tapOverlay.classList.add('hidden');
+  });
+
   document.getElementById('btn-start').addEventListener('click', function () {
     Audio.resume();
+    Audio.startMenuBGM();
+    updateGradeButtons();
+    UI.show('grade');
+  });
+
+  document.getElementById('btn-practice').addEventListener('click', function () {
+    Audio.resume();
+    Audio.startPracticeBGM();
+    buildPracticeGrid(practiceGrade);
+    UI.show('practice');
+  });
+
+  document.getElementById('btn-practice-back').addEventListener('click', function () {
+    state.gen++;
+    Audio.startTitleBGM();
+    UI.show('title');
+  });
+
+  document.getElementById('btn-practice-reset').addEventListener('click', function () {
+    resetReturnScreen = 'practice';
+    Audio.startTitleBGM();
+    UI.show('reset');
+  });
+
+  document.getElementById('btn-grade-top').addEventListener('click', function () {
+    Audio.startTitleBGM();
+    UI.show('title');
+  });
+
+  document.getElementById('btn-clear-reset').addEventListener('click', function () {
+    resetReturnScreen = 'grade';
+    Audio.startTitleBGM();
+    UI.show('reset');
+  });
+
+  document.getElementById('btn-reset-back').addEventListener('click', function () {
+    returnFromReset();
+  });
+
+  document.querySelectorAll('.reset-grade-btn:not(#btn-reset-all)').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      showConfirm(parseInt(btn.getAttribute('data-grade'), 10));
+    });
+  });
+
+  document.getElementById('btn-reset-all').addEventListener('click', function () {
+    showConfirm(null);
+  });
+
+  document.getElementById('btn-confirm-yes').addEventListener('click', function () {
+    hideConfirm();
+    if (pendingResetGrade === null) {
+      for (var g = 1; g <= 6; g++) resetCleared(g);
+    } else {
+      resetCleared(pendingResetGrade);
+    }
+    returnFromReset();
+  });
+
+  document.getElementById('btn-confirm-no').addEventListener('click', function () {
+    hideConfirm();
+  });
+
+  document.getElementById('btn-howto').addEventListener('click', function () {
+    Audio.resume();
+    Audio.startTitleBGM();
+    UI.show('howto');
+  });
+
+  document.getElementById('btn-howto-back').addEventListener('click', function () {
+    Audio.startTitleBGM();
+    UI.show('title');
+  });
+
+  // 練習グレードタブ（動的生成）
+  var tabsEl = document.getElementById('practice-tabs');
+  for (var g = 1; g <= 6; g++) {
+    (function (grade) {
+      var tab = document.createElement('button');
+      tab.className = 'practice-tab' + (grade === 1 ? ' active' : '');
+      tab.setAttribute('data-grade', grade);
+      tab.textContent = grade + '年';
+      tab.addEventListener('click', function () { buildPracticeGrid(grade); });
+      tabsEl.appendChild(tab);
+    })(g);
+  }
+
+  document.getElementById('btn-count-back').addEventListener('click', function () {
+    Audio.startMenuBGM();
+    updateGradeButtons();
     UI.show('grade');
   });
 
   document.querySelectorAll('.grade-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var grade = parseInt(btn.getAttribute('data-grade'), 10);
-      startGame(grade);
+      selectedGrade = parseInt(btn.getAttribute('data-grade'), 10);
+      Audio.startMenuBGM();
+      UI.show('count');
     });
   });
 
-  document.getElementById('btn-retry').addEventListener('click', function () {
-    Audio.resume();
-    startGame(state.grade);
+  document.querySelectorAll('.count-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      KANJI_PER_GAME = parseInt(btn.getAttribute('data-count'), 10);
+      startGame(selectedGrade);
+    });
   });
 
   document.getElementById('btn-grade-select').addEventListener('click', function () {
-    Audio.stopBGM();
-    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     state.gen++;
+    Audio.startMenuBGM();
+    updateGradeButtons();
     UI.show('grade');
   });
 
-  // 「最初から」= 同じ学年で再スタート（btn-retryと同じ）
   document.getElementById('btn-restart').addEventListener('click', function () {
     Audio.resume();
     startGame(state.grade);
   });
 
-  // 「TOPに戻る」（ゲームクリア画面から）
   document.getElementById('btn-top').addEventListener('click', function () {
-    Audio.stopBGM();
-    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     state.gen++;
+    Audio.startTitleBGM();
     UI.show('title');
   });
 
-  // 「TOPに戻る」（ゲーム中ヘッダーから）
   document.getElementById('btn-game-top').addEventListener('click', function () {
-    if (!confirm('TOPに戻りますか？（ゲームデータは失われます）')) return;
-    Audio.stopBGM();
-    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
-    hideCountdown();
     state.gen++;
+    Audio.startTitleBGM();
+    updateGradeButtons();
     UI.show('title');
   });
 
-  // 「最初から」（ゲーム中ヘッダーから）= この漢字のRound 1から
   document.getElementById('btn-game-restart').addEventListener('click', function () {
-    if (!confirm('この漢字のラウンド1からやり直しますか？')) return;
-    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
-    hideCountdown();
     state.gen++;
-    // この漢字で獲得したスコアを差し引いてリセット
-    state.score = Math.max(0, state.score - state.kanjiScore);
-    UI.setScore(state.score);
+    state.kanjiIndex = 0;
+    state.kanjiRatings = [];
     startKanji();
   });
 });

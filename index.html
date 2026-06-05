@@ -3,89 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>漢字リズム</title>
+  <title>漢字書き順</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#E53935">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="漢字書き順">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <button id="btn-mute" aria-label="ミュート">🔊</button>
 
   <!-- タイトル画面 -->
   <div id="screen-title" class="screen active">
-    <h1>漢字リズム</h1>
-    <p class="subtitle">リズムに乗って書き順をなぞろう！</p>
-    <button id="btn-start">スタート</button>
+    <h1>漢字書き順</h1>
+    <p class="subtitle">書き順をなぞって覚えよう！</p>
+    <div id="title-buttons">
+      <button id="btn-start">スタート</button>
+      <button id="btn-practice" style="background:#888;box-shadow:0 4px 0 #555;">自由練習</button>
+      <button id="btn-howto" class="btn-sub">遊び方・仕様</button>
+    </div>
+    <div id="tap-overlay">
+      <p id="tap-hint">タップして開始</p>
+    </div>
     <p class="copyright">© 2026 ざつね屋</p>
+  </div>
+
+  <!-- 遊び方画面 -->
+  <div id="screen-howto" class="screen">
+    <h2>遊び方・仕様</h2>
+    <div id="howto-body">
+      <section>
+        <h3>🎮 ゲームの流れ</h3>
+        <ol>
+          <li>学年と問題数を選んでスタート</li>
+          <li>漢字の書き順見本が流れる</li>
+          <li>小窓のガイドに従い、1画ずつなぞる</li>
+          <li>全画クリアで次の漢字へ</li>
+          <li>全問終了後に総合結果が発表される</li>
+        </ol>
+      </section>
+      <section>
+        <h3>⭕ 判定</h3>
+        <p>なぞった方向が正解と一致すれば ○。<br>方向が違うと ×（ミスとしてカウント）。<br>○× どちらの場合も正しい画が薄く表示されるので、書き順を確認しながら進められます。</p>
+      </section>
+      <section>
+        <h3>🏅 評価（1文字ごと）</h3>
+        <ul>
+          <li>パーフェクト！ — ミスなし</li>
+          <li>もうちょっと！ — ミス 1〜2回</li>
+          <li>がんばろう！ — ミス 3回以上</li>
+        </ul>
+        <p class="howto-note">全問終了後にまとめて結果発表。全問パーフェクトなら「パーフェクト！」、がんばろうが1問でもあれば「がんばろう！」、それ以外は「もうちょっと！」のBGMが流れます。</p>
+      </section>
+      <section>
+        <h3>📚 クリア記録</h3>
+        <p>クリアした漢字は次回ゲームの出題から除外されます。全クリアすると記録がリセットされ、また最初から出題されます。</p>
+        <p class="howto-note">記録はこのブラウザの localStorage に保存されます。ブラウザを閉じても残りますが、ブラウザのキャッシュ・サイトデータをクリアすると消えます。別の端末には引き継がれません。</p>
+      </section>
+      <section>
+        <h3>✏️ 自由練習</h3>
+        <p>学年・漢字を自由に選んで練習できます。練習でクリアした漢字も記録に反映されます。</p>
+      </section>
+    </div>
+    <button id="btn-howto-back" class="btn-sub">← もどる</button>
+  </div>
+
+  <!-- 自由練習画面 -->
+  <div id="screen-practice" class="screen">
+    <h2>自由練習</h2>
+    <div id="practice-tabs"></div>
+    <p id="practice-legend"><span class="legend-cleared"></span>クリア済み</p>
+    <div id="practice-kanji-grid"></div>
+    <div id="practice-bottom">
+      <button id="btn-practice-back" class="btn-sub">← もどる</button>
+      <button id="btn-practice-reset" class="btn-sub btn-reset">リセット</button>
+    </div>
   </div>
 
   <!-- 学年選択画面 -->
   <div id="screen-grade" class="screen">
     <h2>学年を選んでね</h2>
     <div id="grade-buttons">
-      <button class="grade-btn" data-grade="1">1年生</button>
-      <button class="grade-btn" data-grade="2">2年生</button>
-      <button class="grade-btn" data-grade="3">3年生</button>
-      <button class="grade-btn" data-grade="4">4年生</button>
-      <button class="grade-btn" data-grade="5">5年生</button>
-      <button class="grade-btn" data-grade="6">6年生</button>
+      <button class="grade-btn" data-grade="1">1年生<br><span class="grade-progress"></span></button>
+      <button class="grade-btn" data-grade="2">2年生<br><span class="grade-progress"></span></button>
+      <button class="grade-btn" data-grade="3">3年生<br><span class="grade-progress"></span></button>
+      <button class="grade-btn" data-grade="4">4年生<br><span class="grade-progress"></span></button>
+      <button class="grade-btn" data-grade="5">5年生<br><span class="grade-progress"></span></button>
+      <button class="grade-btn" data-grade="6">6年生<br><span class="grade-progress"></span></button>
     </div>
+    <div id="grade-bottom">
+      <button id="btn-grade-top" class="btn-sub">← TOPに戻る</button>
+      <button id="btn-clear-reset" class="btn-sub btn-reset">リセット</button>
+    </div>
+  </div>
+
+  <!-- リセット画面 -->
+  <div id="screen-reset" class="screen">
+    <h2>クリア記録のリセット</h2>
+    <p class="subtitle">リセットする学年を選んでください</p>
+    <div id="reset-buttons">
+      <button class="reset-grade-btn" data-grade="1">1年生</button>
+      <button class="reset-grade-btn" data-grade="2">2年生</button>
+      <button class="reset-grade-btn" data-grade="3">3年生</button>
+      <button class="reset-grade-btn" data-grade="4">4年生</button>
+      <button class="reset-grade-btn" data-grade="5">5年生</button>
+      <button class="reset-grade-btn" data-grade="6">6年生</button>
+      <button id="btn-reset-all" class="reset-grade-btn reset-all-btn">全学年</button>
+    </div>
+    <button id="btn-reset-back" class="btn-sub">← もどる</button>
+  </div>
+
+  <!-- 問題数選択画面 -->
+  <div id="screen-count" class="screen">
+    <h2>何問プレイする？</h2>
+    <div id="count-buttons">
+      <button class="count-btn" data-count="5">5問</button>
+      <button class="count-btn" data-count="10">10問</button>
+      <button class="count-btn" data-count="15">15問</button>
+      <button class="count-btn" data-count="20">20問</button>
+    </div>
+    <button id="btn-count-back" class="btn-sub">← もどる</button>
   </div>
 
   <!-- ゲーム画面 -->
   <div id="screen-game" class="screen">
     <div id="game-top-bar">
       <button id="btn-game-top" class="btn-small-back">TOP</button>
-      <div id="beat-indicator">
-        <span class="beat-dot"></span>
-        <span class="beat-dot"></span>
-        <span class="beat-dot"></span>
-      </div>
       <button id="btn-game-restart" class="btn-small-back">最初から</button>
     </div>
     <div id="game-header">
-      <span id="kanji-display"></span>
-      <span id="round-display"></span>
+      <div id="kanji-left">
+        <div id="kanji-row">
+          <div id="kanji-display"></div>
+          <div id="stroke-count-display"></div>
+        </div>
+        <div id="reading-display"></div>
+      </div>
+      <div id="game-info">
+        <div id="question-display"></div>
+      </div>
     </div>
     <div id="canvas-wrapper">
       <canvas id="main-canvas" width="320" height="320"></canvas>
-      <canvas id="guide-canvas" width="100" height="100"></canvas>
-      <div id="countdown-overlay" class="hidden">
-        <span id="countdown-text"></span>
-      </div>
     </div>
-    <div id="game-footer">
-      <span>ミス: <span id="miss-count">0</span></span>
-      <span>スコア: <span id="score-display">0</span></span>
-    </div>
-  </div>
-
-  <!-- Round間結果画面 -->
-  <div id="screen-round-result" class="screen">
-    <div id="round-result-text"></div>
-    <div id="round-result-label"></div>
+    <div id="preview-label">👀 書き順を見てね！</div>
+    <canvas id="guide-canvas" width="90" height="90"></canvas>
   </div>
 
   <!-- 漢字クリア画面 -->
   <div id="screen-kanji-clear" class="screen">
     <div id="kanji-clear-kanji"></div>
-    <div id="kanji-clear-stars"></div>
-    <div id="kanji-clear-score"></div>
+    <div id="kanji-clear-rating"></div>
   </div>
 
   <!-- ゲームクリア画面 -->
   <div id="screen-game-clear" class="screen">
     <h2>ゲームクリア！</h2>
-    <div id="total-score"></div>
-    <div id="total-stars"></div>
-    <div id="best-score"></div>
+    <div id="game-clear-ratings"></div>
     <div id="game-clear-buttons">
-      <button id="btn-share">シェアする</button>
       <button id="btn-restart">最初から</button>
       <button id="btn-grade-select">学年を変える</button>
-      <button id="btn-retry" style="display:none">もう一度</button>
-      <button id="btn-top" class="btn-sub">TOPに戻る</button>
+<button id="btn-top" class="btn-sub">TOPに戻る</button>
     </div>
     <p class="copyright">© 2026 ざつね屋</p>
   </div>
 
+  <!-- 確認モーダル -->
+  <div id="confirm-modal" class="hidden">
+    <div id="confirm-box">
+      <p id="confirm-msg"></p>
+      <div id="confirm-buttons">
+        <button id="btn-confirm-yes" class="btn-reset">はい</button>
+        <button id="btn-confirm-no" class="btn-sub">いいえ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
+  </script>
   <script src="js/kanji-data.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/canvas.js"></script>

@@ -8,6 +8,7 @@ KanjiVGデータを kanji-data.js に変換するスクリプト。
 import gzip, xml.etree.ElementTree as ET, math, re, json, os, urllib.request
 
 KANJIVG_URL = "https://github.com/KanjiVG/kanjivg/releases/download/r20250816/kanjivg-20250816.xml.gz"
+KANJIDIC2_URL = "https://www.edrdg.org/pub/Nihongo/kanjidic2.xml.gz"
 
 # 文部科学省 小学校学習漢字 配当表（2020年版）
 GRADE_KANJI = {
@@ -27,17 +28,84 @@ for grade, chars in GRADE_KANJI.items():
 
 
 def download_kanjivg(dest_path):
-    print(f"KanjiVGをダウンロード中...")
+    print("KanjiVGをダウンロード中...")
     urllib.request.urlretrieve(KANJIVG_URL, dest_path)
     print("ダウンロード完了")
 
 
+def load_kanjidic2(script_dir):
+    gz_path = os.path.join(script_dir, "kanjidic2.xml.gz")
+    if not os.path.exists(gz_path):
+        print("KANJIDIC2をダウンロード中...")
+        urllib.request.urlretrieve(KANJIDIC2_URL, gz_path)
+        print("ダウンロード完了")
+
+    print("KANJIDIC2を解析中...")
+    readings = {}
+    with gzip.open(gz_path, 'rb') as f:
+        for event, elem in ET.iterparse(f, events=['end']):
+            if elem.tag == 'character':
+                lit = elem.find('literal')
+                if lit is None:
+                    elem.clear(); continue
+                ch = lit.text
+                rm = elem.find('.//rmgroup')
+                if rm is not None:
+                    on  = [r.text for r in rm.findall('reading') if r.get('r_type') == 'ja_on']
+                    kun = [r.text for r in rm.findall('reading') if r.get('r_type') == 'ja_kun']
+                    readings[ch] = {'on': on, 'kun': kun}
+                elem.clear()
+    return readings
+
+
 def parse_path_endpoints(d):
-    nums = re.findall(r'[-+]?\d*\.?\d+', d)
-    if len(nums) < 4:
+    """SVGパスを正しく解析して絶対座標の始点・終点を返す。
+    相対コマンド(c/q/l/m)を正しく累積する。"""
+    x, y = 0.0, 0.0
+    sx, sy = None, None
+
+    segments = re.split(r'([MLCQmlcqzZ])', d.strip())
+    cmd = None
+    for seg in segments:
+        seg = seg.strip()
+        if not seg:
+            continue
+        if seg in 'MLCQmlcqzZ':
+            cmd = seg
+            continue
+        nums = [float(n) for n in re.findall(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', seg)]
+        if not nums:
+            continue
+        if cmd == 'M':
+            x, y = nums[0], nums[1]
+            if sx is None:
+                sx, sy = x, y
+        elif cmd == 'm':
+            x += nums[0]; y += nums[1]
+            if sx is None:
+                sx, sy = x, y
+        elif cmd == 'c':  # relative cubic bezier: 6nums per segment
+            for i in range(0, len(nums) - 5, 6):
+                x += nums[i + 4]; y += nums[i + 5]
+        elif cmd == 'C':  # absolute cubic bezier
+            for i in range(0, len(nums) - 5, 6):
+                x, y = nums[i + 4], nums[i + 5]
+        elif cmd == 'q':  # relative quadratic bezier: 4nums per segment
+            for i in range(0, len(nums) - 3, 4):
+                x += nums[i + 2]; y += nums[i + 3]
+        elif cmd == 'Q':
+            for i in range(0, len(nums) - 3, 4):
+                x, y = nums[i + 2], nums[i + 3]
+        elif cmd == 'l':
+            for i in range(0, len(nums) - 1, 2):
+                x += nums[i]; y += nums[i + 1]
+        elif cmd == 'L':
+            for i in range(0, len(nums) - 1, 2):
+                x, y = nums[i], nums[i + 1]
+
+    if sx is None:
         return None, None
-    f = [float(n) for n in nums]
-    return (f[0], f[1]), (f[-2], f[-1])
+    return (sx, sy), (x, y)
 
 
 DIRS = ['right','right-down','down','left-down','left','left-up','up','right-up']
@@ -82,6 +150,8 @@ def main():
     if not os.path.exists(gz_path):
         download_kanjivg(gz_path)
 
+    readings = load_kanjidic2(script_dir)
+
     print("KanjiVGを解析中...")
     with gzip.open(gz_path, 'rb') as f:
         content = f.read()
@@ -110,12 +180,15 @@ def main():
             if not strokes:
                 missing.append(ch)
                 continue
+            r = readings.get(ch, {})
             kanji_list.append({
                 'kanji': ch,
                 'unicode': cp,
                 'grade': grade,
                 'strokeCount': len(strokes),
                 'bpmBase': get_bpm_base(len(strokes)),
+                'on':  r.get('on', []),
+                'kun': r.get('kun', []),
                 'strokes': strokes
             })
 

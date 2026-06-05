@@ -1,0 +1,18 @@
+{
+  "name": "漢字書き順",
+  "short_name": "漢字書き順",
+  "description": "書き順をなぞって覚える漢字ゲーム",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#E53935",
+  "background_color": "#FFF9F0",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
