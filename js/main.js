@@ -324,14 +324,12 @@ document.addEventListener('DOMContentLoaded', function () {
     UI.show('title');
   });
 
-  // 「最初から」（ゲーム中ヘッダーから）
+  // 「最初から」（ゲーム中ヘッダーから）= この漢字のRound 1から
   document.getElementById('btn-game-restart').addEventListener('click', function () {
-    if (!confirm('最初からやり直しますか？')) return;
-    Audio.stopBGM();
+    if (!confirm('この漢字のラウンド1からやり直しますか？')) return;
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
     hideCountdown();
-    Audio.resume();
-    startGame(state.grade);
+    startKanji();
   });
 });
