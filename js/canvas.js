@@ -149,7 +149,7 @@ var CanvasModule = (function () {
     return new Promise(function (resolve) {
       var size = mainCanvas.width;
       var total = kanjiData.strokes.length;
-      var delay = Math.max(350, Math.min(800, 2000 / total));
+      var delay = Math.max(500, Math.min(900, 4500 / total));
       var i = 0;
 
       function step() {
