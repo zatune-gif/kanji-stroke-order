@@ -124,7 +124,7 @@ async function startRound() {
   CanvasModule.clearMain();
   CanvasModule.setEnabled(false);
 
-  if (state.round === 1) {
+  if (state.round <= 2) {
     CanvasModule.drawGuide(kanji, 0);
   } else {
     CanvasModule.clearGuide();
@@ -166,9 +166,7 @@ function onBeat(beatTime) {
   CanvasModule.setEnabled(true);
   CanvasModule.clearMain();
 
-  if (state.round === 2) {
-    CanvasModule.drawGhostGuide(kanji, state.strokeIndex);
-  } else if (state.round === 1) {
+  if (state.round <= 2) {
     CanvasModule.drawGuide(kanji, state.strokeIndex);
   }
 }
@@ -206,7 +204,7 @@ function handleStrokeResult(correct, onTime) {
 
   state.strokeIndex++;
 
-  if (state.round === 1) {
+  if (state.round <= 2) {
     CanvasModule.drawGuide(kanji, state.strokeIndex);
   }
 
