@@ -7,6 +7,7 @@ var CanvasModule = (function () {
   var isDrawing = false;
   var onStrokeEnd = null;
   var enabled = false;
+  var clearTimer = null;
 
   function init(mainEl, guideEl, callback) {
     mainCanvas = mainEl;
@@ -101,6 +102,7 @@ var CanvasModule = (function () {
   }
 
   function clearMain() {
+    if (clearTimer !== null) { clearTimeout(clearTimer); clearTimer = null; }
     mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
   }
 
@@ -190,7 +192,8 @@ var CanvasModule = (function () {
       mainCtx.stroke();
     }
     mainCtx.restore();
-    setTimeout(clearMain, 700);
+    if (clearTimer !== null) clearTimeout(clearTimer);
+    clearTimer = setTimeout(function () { clearTimer = null; clearMain(); }, 700);
   }
 
   return {
