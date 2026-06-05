@@ -1,4 +1,4 @@
-var ROUND_MULTIPLIERS = [1.0, 1.5, 2.0];
+var ROUND_MULTIPLIERS = [1.0, 1.3, 1.7];
 var KANJI_PER_GAME = 10;
 
 var state = {
@@ -20,7 +20,8 @@ var state = {
 };
 
 function getBPM(kanjiData, round) {
-  var multipliers = [1.0, 1.4, 1.8];
+  // 0.5倍から始めてRoundごとに加速（bpmBaseは60〜96）
+  var multipliers = [0.5, 0.75, 1.0];
   return Math.round(kanjiData.bpmBase * multipliers[round - 1]);
 }
 
@@ -271,5 +272,27 @@ document.addEventListener('DOMContentLoaded', function () {
     Audio.stopBGM();
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     UI.show('grade');
+  });
+
+  // 「最初から」= 同じ学年で再スタート（btn-retryと同じ）
+  document.getElementById('btn-restart').addEventListener('click', function () {
+    Audio.resume();
+    startGame(state.grade);
+  });
+
+  // 「TOPに戻る」（ゲームクリア画面から）
+  document.getElementById('btn-top').addEventListener('click', function () {
+    Audio.stopBGM();
+    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    UI.show('title');
+  });
+
+  // 「TOPに戻る」（ゲーム中ヘッダーから）
+  document.getElementById('btn-game-top').addEventListener('click', function () {
+    if (!confirm('TOPに戻りますか？（ゲームデータは失われます）')) return;
+    Audio.stopBGM();
+    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    CanvasModule.setEnabled(false);
+    UI.show('title');
   });
 });

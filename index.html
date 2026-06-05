@@ -31,10 +31,14 @@
 
   <!-- ゲーム画面 -->
   <div id="screen-game" class="screen">
-    <div id="beat-indicator">
-      <span class="beat-dot"></span>
-      <span class="beat-dot"></span>
-      <span class="beat-dot"></span>
+    <div id="game-top-bar">
+      <button id="btn-game-top" class="btn-small-back">TOP</button>
+      <div id="beat-indicator">
+        <span class="beat-dot"></span>
+        <span class="beat-dot"></span>
+        <span class="beat-dot"></span>
+      </div>
+      <div style="width:52px"></div>
     </div>
     <div id="game-header">
       <span id="kanji-display"></span>
@@ -71,8 +75,10 @@
     <div id="best-score"></div>
     <div id="game-clear-buttons">
       <button id="btn-share">シェアする</button>
-      <button id="btn-retry">もう一度</button>
+      <button id="btn-restart">最初から</button>
       <button id="btn-grade-select">学年を変える</button>
+      <button id="btn-retry" style="display:none">もう一度</button>
+      <button id="btn-top" class="btn-sub">TOPに戻る</button>
     </div>
     <p class="copyright">© 2026 ざつね屋</p>
   </div>

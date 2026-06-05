@@ -99,6 +99,28 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-sh
   padding-top: 20px;
 }
 
+#game-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.btn-small-back {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  background: #aaa;
+  color: #fff;
+  box-shadow: 0 3px 0 #777;
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-small-back:active { transform: translateY(2px); box-shadow: 0 1px 0 #777; }
+
 #beat-indicator {
   display: flex;
   gap: 12px;
@@ -243,13 +265,21 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-sh
   box-shadow: 0 4px 0 var(--accent-shadow);
 }
 #btn-share:active { box-shadow: 0 1px 0 var(--accent-shadow); }
-#btn-retry, #btn-grade-select {
+#btn-restart, #btn-grade-select {
   background: #888;
   box-shadow: 0 4px 0 #555;
   font-size: 0.9rem;
   padding: 12px 24px;
 }
-#btn-retry:active, #btn-grade-select:active { box-shadow: 0 1px 0 #555; }
+#btn-restart:active, #btn-grade-select:active { box-shadow: 0 1px 0 #555; }
+
+.btn-sub {
+  background: #bbb;
+  box-shadow: 0 3px 0 #888;
+  font-size: 0.82rem;
+  padding: 10px 20px;
+}
+.btn-sub:active { box-shadow: 0 1px 0 #888; transform: translateY(2px); }
 
 /* ===== 著作権 ===== */
 .copyright {
