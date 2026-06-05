@@ -62,10 +62,10 @@ if HAS_PILLOW:
     except Exception:
         pass
 
-    # URL
+    # Copyright
     try:
-        font_url = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 28)
-        draw.text((W//2, 560), 'zatune-gif.github.io/kanji-stroke-order', font=font_url, fill='#E53935', anchor='mm')
+        font_copy = ImageFont.truetype('C:/Windows/Fonts/msgothic.ttc', 32)
+        draw.text((W//2, 560), '© 2026 ざつね屋', font=font_copy, fill='#E53935', anchor='mm')
     except Exception:
         pass
 
