@@ -129,7 +129,7 @@ var CanvasModule = (function () {
       if (i < currentStrokeIndex) {
         color = '#BBBBBB'; lw = 2;
       } else if (i === currentStrokeIndex) {
-        color = '#E53935'; lw = 3.5;
+        color = '#1E88E5'; lw = 3.5;
       } else {
         color = '#E8E8E8'; lw = 2;
       }

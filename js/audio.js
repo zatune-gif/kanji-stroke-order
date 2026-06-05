@@ -106,8 +106,13 @@ var Audio = (function () {
     if (bgmHandle) { bgmHandle(); bgmHandle = null; }
   }
 
+  function getCurrentTime() {
+    return getCtx().currentTime;
+  }
+
   return {
     resume: resume,
+    getCurrentTime: getCurrentTime,
     playClear: playClear,
     playMiss: playMiss,
     playGameClear: playGameClear,

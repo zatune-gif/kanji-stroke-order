@@ -175,9 +175,7 @@ function onStrokeComplete(direction) {
   var kanji = state.kanjiList[state.kanjiIndex];
   var expected = kanji.strokes[state.strokeIndex].direction;
   var correct = CanvasModule.isDirectionMatch(direction, expected);
-
-  var ac = new (window.AudioContext || window.webkitAudioContext)();
-  var onTime = ac.currentTime <= state.strokeDeadline;
+  var onTime = Audio.getCurrentTime() <= state.strokeDeadline;
 
   handleStrokeResult(correct, onTime);
 }
