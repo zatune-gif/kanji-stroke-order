@@ -1,0 +1,261 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #FF6B6B;
+  --primary-shadow: #C94B4B;
+  --secondary: #FFD93D;
+  --accent: #4ECDC4;
+  --accent-shadow: #2E9990;
+  --correct: #43A047;
+  --miss: #E53935;
+  --dark: #2C2C2C;
+  --bg: #FFF9F0;
+}
+
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', 'Yu Gothic', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* ===== 画面共通 ===== */
+.screen {
+  display: none;
+  width: 100%;
+  max-width: 420px;
+  min-height: 100dvh;
+  padding: 28px 18px;
+  text-align: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.screen.active { display: flex; }
+
+/* ===== タイトル ===== */
+#screen-title h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--primary);
+  text-shadow: 4px 4px 0 #FFB3B3, 0 0 20px rgba(255,107,107,0.3);
+  letter-spacing: 6px;
+  line-height: 1.2;
+}
+.subtitle {
+  font-size: 0.95rem;
+  color: #888;
+}
+
+/* ===== 学年選択 ===== */
+#screen-grade h2 { font-size: 1.5rem; font-weight: bold; }
+#grade-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+.grade-btn {
+  padding: 22px 8px;
+  font-size: 1.15rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--accent-shadow);
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.grade-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--accent-shadow); }
+
+/* ===== ボタン共通 ===== */
+button {
+  padding: 14px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--primary-shadow);
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-shadow); }
+
+/* ===== ゲーム画面 ===== */
+#screen-game {
+  padding: 12px 10px;
+  gap: 10px;
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+#beat-indicator {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  height: 24px;
+}
+.beat-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #DDD;
+  transition: background 0.05s, transform 0.05s, box-shadow 0.05s;
+}
+.beat-dot.active {
+  background: var(--primary);
+  transform: scale(1.5);
+  box-shadow: 0 0 8px rgba(255,107,107,0.6);
+}
+
+#game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  padding: 0 4px;
+}
+#kanji-display {
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 1;
+}
+#round-display {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: bold;
+}
+
+#canvas-wrapper {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  flex-shrink: 0;
+}
+#main-canvas {
+  border: 3px solid var(--primary);
+  border-radius: 20px;
+  background: #fff;
+  touch-action: none;
+  display: block;
+  box-shadow: 0 4px 16px rgba(255,107,107,0.15);
+}
+#guide-canvas {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#game-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: bold;
+}
+#score-display, #miss-count { color: var(--dark); }
+
+/* ===== Round結果 ===== */
+#screen-round-result { gap: 14px; }
+#round-result-text {
+  font-size: 7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+#round-result-label {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #555;
+}
+
+/* ===== 漢字クリア ===== */
+#kanji-clear-kanji {
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--dark);
+}
+#kanji-clear-stars {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+.star.filled { color: var(--secondary); text-shadow: 0 0 8px rgba(255,217,61,0.5); }
+.star.empty { color: #CCC; }
+#kanji-clear-score {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+/* ===== ゲームクリア ===== */
+#screen-game-clear h2 {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+#total-score {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--dark);
+}
+#total-stars {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--secondary);
+}
+.stars-denom { font-size: 0.9rem; color: #AAA; }
+#best-score {
+  font-size: 1rem;
+  color: #888;
+}
+#best-score.new-best {
+  color: var(--correct);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+#game-clear-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+#btn-share {
+  background: var(--accent);
+  box-shadow: 0 4px 0 var(--accent-shadow);
+}
+#btn-share:active { box-shadow: 0 1px 0 var(--accent-shadow); }
+#btn-retry, #btn-grade-select {
+  background: #888;
+  box-shadow: 0 4px 0 #555;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+}
+#btn-retry:active, #btn-grade-select:active { box-shadow: 0 1px 0 #555; }
+
+/* ===== 著作権 ===== */
+.copyright {
+  font-size: 0.68rem;
+  color: #BBB;
+}
+
+/* ===== h2 共通 ===== */
+h2 { font-size: 1.5rem; font-weight: bold; }

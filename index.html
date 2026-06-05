@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>漢字リズム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- タイトル画面 -->
+  <div id="screen-title" class="screen active">
+    <h1>漢字リズム</h1>
+    <p class="subtitle">リズムに乗って書き順をなぞろう！</p>
+    <button id="btn-start">スタート</button>
+    <p class="copyright">© 2026 ざつね屋</p>
+  </div>
+
+  <!-- 学年選択画面 -->
+  <div id="screen-grade" class="screen">
+    <h2>学年を選んでね</h2>
+    <div id="grade-buttons">
+      <button class="grade-btn" data-grade="1">1年生</button>
+      <button class="grade-btn" data-grade="2">2年生</button>
+      <button class="grade-btn" data-grade="3">3年生</button>
+      <button class="grade-btn" data-grade="4">4年生</button>
+      <button class="grade-btn" data-grade="5">5年生</button>
+      <button class="grade-btn" data-grade="6">6年生</button>
+    </div>
+  </div>
+
+  <!-- ゲーム画面 -->
+  <div id="screen-game" class="screen">
+    <div id="beat-indicator">
+      <span class="beat-dot"></span>
+      <span class="beat-dot"></span>
+      <span class="beat-dot"></span>
+    </div>
+    <div id="game-header">
+      <span id="kanji-display"></span>
+      <span id="round-display"></span>
+    </div>
+    <div id="canvas-wrapper">
+      <canvas id="main-canvas" width="320" height="320"></canvas>
+      <canvas id="guide-canvas" width="100" height="100"></canvas>
+    </div>
+    <div id="game-footer">
+      <span>ミス: <span id="miss-count">0</span></span>
+      <span>スコア: <span id="score-display">0</span></span>
+    </div>
+  </div>
+
+  <!-- Round間結果画面 -->
+  <div id="screen-round-result" class="screen">
+    <div id="round-result-text"></div>
+    <div id="round-result-label"></div>
+  </div>
+
+  <!-- 漢字クリア画面 -->
+  <div id="screen-kanji-clear" class="screen">
+    <div id="kanji-clear-kanji"></div>
+    <div id="kanji-clear-stars"></div>
+    <div id="kanji-clear-score"></div>
+  </div>
+
+  <!-- ゲームクリア画面 -->
+  <div id="screen-game-clear" class="screen">
+    <h2>ゲームクリア！</h2>
+    <div id="total-score"></div>
+    <div id="total-stars"></div>
+    <div id="best-score"></div>
+    <div id="game-clear-buttons">
+      <button id="btn-share">シェアする</button>
+      <button id="btn-retry">もう一度</button>
+      <button id="btn-grade-select">学年を変える</button>
+    </div>
+    <p class="copyright">© 2026 ざつね屋</p>
+  </div>
+
+  <script src="js/kanji-data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

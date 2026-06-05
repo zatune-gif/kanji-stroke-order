@@ -1,0 +1,5 @@
+﻿root tag: kanjivg
+child count: 6702
+first child tag: kanji
+first child id: kvg:kanji_00021
+first child attribs: {'id': 'kvg:kanji_00021'}

@@ -1,0 +1,6 @@
+﻿Found 山
+  tag: kanji attribs: dict_keys(['id'])
+  tag: g attribs: dict_keys(['id', '{http://kanjivg.tagaini.net}element', '{http://kanjivg.tagaini.net}radical'])
+  tag: path attribs: dict_keys(['id', '{http://kanjivg.tagaini.net}type', 'd'])
+  tag: path attribs: dict_keys(['id', '{http://kanjivg.tagaini.net}type', 'd'])
+  tag: path attribs: dict_keys(['id', '{http://kanjivg.tagaini.net}type', 'd'])

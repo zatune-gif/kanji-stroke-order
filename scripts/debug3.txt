@@ -1,0 +1,3 @@
+﻿山 05x: 05c71
+一 05x: 04e00
+script line: "cp = format(ord(ch), '05x')"
