@@ -1,4 +1,0 @@
-﻿grade1 length: 80
-grade1 first 5: 一右雨円王
-山 in grade1: True
-lookup cp: 05c71 found: True

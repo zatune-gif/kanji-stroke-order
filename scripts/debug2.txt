@@ -1,4 +1,0 @@
-﻿unicode_map size: 6702
-first 5 keys: ['00021', '0002c', '0002e', '00030', '00031']
-山 04x: 5c71 in map: False
-山 05x: 05c71 in map: True

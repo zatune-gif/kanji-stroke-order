@@ -1,0 +1,3 @@
+scripts/kanjivg*.gz
+scripts/*.txt
+scripts/__pycache__/
