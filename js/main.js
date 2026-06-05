@@ -85,8 +85,7 @@ function startGame(grade) {
 }
 
 // 漢字開始
-async function startKanji() {
-  var myGen = state.gen;
+function startKanji() {
   var kanji = state.kanjiList[state.kanjiIndex];
   state.round = 1;
   state.totalMiss = 0;
@@ -98,12 +97,6 @@ async function startKanji() {
   UI.resetBeat();
   UI.show('game');
   CanvasModule.setEnabled(false);
-
-  // 漢字プレビューアニメ
-  await CanvasModule.playPreview(kanji);
-  if (state.gen !== myGen) return;
-  await sleep(300);
-  if (state.gen !== myGen) return;
 
   startRound();
 }
@@ -127,6 +120,12 @@ async function startRound() {
   CanvasModule.drawGuide(kanji, 0);
 
   if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+
+  // 毎ラウンド書き順見本を表示
+  await CanvasModule.playPreview(kanji);
+  if (state.gen !== myGen) return;
+  await sleep(200);
+  if (state.gen !== myGen) return;
 
   // 用意ドンカウントダウン
   await playReadyGo();
