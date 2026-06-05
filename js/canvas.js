@@ -97,7 +97,7 @@ var CanvasModule = (function () {
     var ei = DIRS.indexOf(expected);
     if (di === -1 || ei === -1) return detected === expected;
     var diff = Math.abs(di - ei);
-    return diff <= 1 || diff >= 7;
+    return diff <= 2 || diff >= 6;
   }
 
   function clearMain() {
