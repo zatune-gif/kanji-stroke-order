@@ -38,7 +38,7 @@
         <span class="beat-dot"></span>
         <span class="beat-dot"></span>
       </div>
-      <div style="width:52px"></div>
+      <button id="btn-game-restart" class="btn-small-back">最初から</button>
     </div>
     <div id="game-header">
       <span id="kanji-display"></span>
@@ -47,6 +47,9 @@
     <div id="canvas-wrapper">
       <canvas id="main-canvas" width="320" height="320"></canvas>
       <canvas id="guide-canvas" width="100" height="100"></canvas>
+      <div id="countdown-overlay" class="hidden">
+        <span id="countdown-text"></span>
+      </div>
     </div>
     <div id="game-footer">
       <span>ミス: <span id="miss-count">0</span></span>

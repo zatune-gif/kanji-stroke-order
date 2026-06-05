@@ -20,8 +20,8 @@ var state = {
 };
 
 function getBPM(kanjiData, round) {
-  // 0.5倍から始めてRoundごとに加速（bpmBaseは60〜96）
-  var multipliers = [0.5, 0.75, 1.0];
+  // Round1はゆっくり（約3秒/画）、Round3で元速度の75%
+  var multipliers = [0.33, 0.52, 0.75];
   return Math.round(kanjiData.bpmBase * multipliers[round - 1]);
 }
 
@@ -44,6 +44,30 @@ function calcStars(totalMiss) {
 
 function sleep(ms) {
   return new Promise(function (r) { setTimeout(r, ms); });
+}
+
+function showCountdown(text, isGo) {
+  var overlay = document.getElementById('countdown-overlay');
+  var el = document.getElementById('countdown-text');
+  el.textContent = text;
+  el.className = isGo ? 'go' : '';
+  overlay.classList.remove('hidden');
+  // アニメーションをリセット
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = '';
+}
+
+function hideCountdown() {
+  document.getElementById('countdown-overlay').classList.add('hidden');
+}
+
+async function playReadyGo() {
+  showCountdown('用意…', false);
+  await sleep(900);
+  showCountdown('ドン！', true);
+  await sleep(600);
+  hideCountdown();
 }
 
 // ゲーム開始
@@ -80,7 +104,7 @@ async function startKanji() {
 }
 
 // Round開始
-function startRound() {
+async function startRound() {
   var kanji = state.kanjiList[state.kanjiIndex];
   state.strokeIndex = 0;
   state.missCount = 0;
@@ -101,6 +125,9 @@ function startRound() {
   }
 
   if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+
+  // 用意ドンカウントダウン
+  await playReadyGo();
 
   var bpm = getBPM(kanji, state.round);
   state.stopBeat = Audio.startBeatScheduler(bpm, function (beatTime) {
@@ -293,6 +320,18 @@ document.addEventListener('DOMContentLoaded', function () {
     Audio.stopBGM();
     if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
     CanvasModule.setEnabled(false);
+    hideCountdown();
     UI.show('title');
+  });
+
+  // 「最初から」（ゲーム中ヘッダーから）
+  document.getElementById('btn-game-restart').addEventListener('click', function () {
+    if (!confirm('最初からやり直しますか？')) return;
+    Audio.stopBGM();
+    if (state.stopBeat) { state.stopBeat(); state.stopBeat = null; }
+    CanvasModule.setEnabled(false);
+    hideCountdown();
+    Audio.resume();
+    startGame(state.grade);
   });
 });

@@ -184,6 +184,34 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-sh
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+#countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255,249,240,0.82);
+  pointer-events: none;
+}
+#countdown-overlay.hidden { display: none; }
+#countdown-text {
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--primary);
+  text-shadow: 3px 3px 0 #FFB3B3;
+  animation: pop 0.25s ease-out;
+}
+#countdown-text.go {
+  font-size: 3.8rem;
+  color: var(--correct);
+  text-shadow: 3px 3px 0 #A5D6A7;
+}
+@keyframes pop {
+  0%   { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
 #game-footer {
   display: flex;
   justify-content: space-between;
