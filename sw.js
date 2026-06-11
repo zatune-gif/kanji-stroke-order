@@ -1,4 +1,4 @@
-var CACHE = 'kanji-v1';
+var CACHE = 'kanji-v2';
 var STATIC = [
   './',
   './index.html',

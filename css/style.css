@@ -568,3 +568,9 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-sh
 
 /* ===== h2 共通 ===== */
 h2 { font-size: 1.5rem; font-weight: bold; }
+
+/* タイトル画面：自由練習ボタン（旧インラインstyleから移行） */
+.btn-gray {
+  background: #888;
+  box-shadow: 0 4px 0 #555;
+}

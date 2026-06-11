@@ -1,5 +1,4 @@
-var Audio = (function () {
-  var NativeAudio = window.Audio; // window.Audio が上書きされる前に退避
+var AudioModule = (function () {
   var ctx = null;
   var currentBGMKey = null;
   var audioUnlocked = false;
@@ -22,7 +21,7 @@ var Audio = (function () {
   // ─── BGM プレイヤーを初期化（HTML Audio） ────────────
   var bgmPlayers = {};
   Object.keys(BGM_FILES).forEach(function (key) {
-    var a = new NativeAudio(BGM_FILES[key]);
+    var a = new Audio(BGM_FILES[key]);
     a.loop = true;
     a.volume = 0;
     a._fadeTimer = null;

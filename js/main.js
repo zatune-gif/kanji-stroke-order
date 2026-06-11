@@ -34,11 +34,11 @@ function hideConfirm() {
 
 function returnFromReset() {
   if (resetReturnScreen === 'practice') {
-    Audio.startPracticeBGM();
+    AudioModule.startPracticeBGM();
     buildPracticeGrid(practiceGrade);
     UI.show('practice');
   } else {
-    Audio.startMenuBGM();
+    AudioModule.startMenuBGM();
     updateGradeButtons();
     UI.show('grade');
   }
@@ -110,7 +110,7 @@ function startPracticeGame(kanjiData) {
   state.kanjiList = [kanjiData];
   state.kanjiIndex = 0;
   state.kanjiRatings = [];
-  Audio.startGameBGM();
+  AudioModule.startGameBGM();
   startKanji();
 }
 // ─────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ function startGame(grade) {
   state.gen++;
   state.grade = grade;
   state.isPractice = false;
-  Audio.startGameBGM();
+  AudioModule.startGameBGM();
 
   var all = getKanjiByGrade(grade);
   var cleared = getClearedSet(grade);
@@ -214,10 +214,10 @@ function handleStrokeResult(correct) {
   } catch (e) {}
   if (correct) {
     CanvasModule.flashResult(true);
-    Audio.playCorrect();
+    AudioModule.playCorrect();
   } else {
     CanvasModule.flashResult(false);
-    Audio.playMiss();
+    AudioModule.playMiss();
     state.missCount++;
   }
 
@@ -245,7 +245,7 @@ async function onKanjiComplete() {
 
     if (state.isPractice) {
       try { buildPracticeGrid(practiceGrade); } catch (e) {}
-      Audio.startPracticeBGM();
+      AudioModule.startPracticeBGM();
       UI.show('practice');
       return;
     }
@@ -266,7 +266,7 @@ async function onKanjiComplete() {
       } else {
         try { await onGameComplete(myGen); } catch (e2) {
           state.gen++;
-          Audio.startTitleBGM();
+          AudioModule.startTitleBGM();
           UI.show('title');
         }
       }
@@ -277,9 +277,9 @@ async function onKanjiComplete() {
 async function onGameComplete(myGen) {
   if (myGen !== undefined && state.gen !== myGen) return;
   var overallRating = calcOverallRating(state.kanjiRatings);
-  try { Audio.stopBGM(); } catch (e) {}
+  try { AudioModule.stopBGM(); } catch (e) {}
   var jingleDone = Promise.resolve();
-  try { jingleDone = Audio.playResultJingle(overallRating); } catch (e) {}
+  try { jingleDone = AudioModule.playResultJingle(overallRating); } catch (e) {}
   UI.showGameClear(state.kanjiRatings);
   // ジングルが鳴り終わるまで待つ（最大 5 秒）
   await Promise.race([jingleDone, sleep(5000)]);
@@ -297,58 +297,58 @@ document.addEventListener('DOMContentLoaded', function () {
   // ミュートボタン
   var muteBtn = document.getElementById('btn-mute');
   function updateMuteBtn() {
-    var muted = Audio.getMuted();
+    var muted = AudioModule.getMuted();
     muteBtn.textContent = muted ? '🔇' : '🔊';
     muteBtn.classList.toggle('muted', muted);
   }
   updateMuteBtn();
   muteBtn.addEventListener('click', function () {
-    Audio.toggleMute();
+    AudioModule.toggleMute();
     updateMuteBtn();
   });
 
   // 初回タップ：オーバーレイを消して BGM 開始
   var tapOverlay = document.getElementById('tap-overlay');
   tapOverlay.addEventListener('click', function () {
-    Audio.resume();
-    Audio.startTitleBGM();
+    AudioModule.resume();
+    AudioModule.startTitleBGM();
     tapOverlay.classList.add('hidden');
   });
 
   document.getElementById('btn-start').addEventListener('click', function () {
-    Audio.resume();
-    Audio.startMenuBGM();
+    AudioModule.resume();
+    AudioModule.startMenuBGM();
     updateGradeButtons();
     UI.show('grade');
   });
 
   document.getElementById('btn-practice').addEventListener('click', function () {
-    Audio.resume();
-    Audio.startPracticeBGM();
+    AudioModule.resume();
+    AudioModule.startPracticeBGM();
     buildPracticeGrid(practiceGrade);
     UI.show('practice');
   });
 
   document.getElementById('btn-practice-back').addEventListener('click', function () {
     state.gen++;
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('title');
   });
 
   document.getElementById('btn-practice-reset').addEventListener('click', function () {
     resetReturnScreen = 'practice';
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('reset');
   });
 
   document.getElementById('btn-grade-top').addEventListener('click', function () {
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('title');
   });
 
   document.getElementById('btn-clear-reset').addEventListener('click', function () {
     resetReturnScreen = 'grade';
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('reset');
   });
 
@@ -381,13 +381,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('btn-howto').addEventListener('click', function () {
-    Audio.resume();
-    Audio.startTitleBGM();
+    AudioModule.resume();
+    AudioModule.startTitleBGM();
     UI.show('howto');
   });
 
   document.getElementById('btn-howto-back').addEventListener('click', function () {
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('title');
   });
 
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.getElementById('btn-count-back').addEventListener('click', function () {
-    Audio.startMenuBGM();
+    AudioModule.startMenuBGM();
     updateGradeButtons();
     UI.show('grade');
   });
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.grade-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       selectedGrade = parseInt(btn.getAttribute('data-grade'), 10);
-      Audio.startMenuBGM();
+      AudioModule.startMenuBGM();
       UI.show('count');
     });
   });
@@ -427,26 +427,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('btn-grade-select').addEventListener('click', function () {
     state.gen++;
-    Audio.startMenuBGM();
+    AudioModule.startMenuBGM();
     updateGradeButtons();
     UI.show('grade');
   });
 
   document.getElementById('btn-restart').addEventListener('click', function () {
-    Audio.resume();
+    AudioModule.resume();
     startGame(state.grade);
   });
 
   document.getElementById('btn-top').addEventListener('click', function () {
     state.gen++;
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     UI.show('title');
   });
 
   document.getElementById('btn-game-top').addEventListener('click', function () {
     CanvasModule.setEnabled(false);
     state.gen++;
-    Audio.startTitleBGM();
+    AudioModule.startTitleBGM();
     updateGradeButtons();
     UI.show('title');
   });

@@ -33,15 +33,6 @@ var UI = (function () {
     document.getElementById('question-display').textContent = current + ' / ' + total + '問';
   }
 
-  function showKanjiClear(kanji, rating) {
-    show('kanji-clear');
-    document.getElementById('kanji-clear-kanji').textContent = kanji;
-    var r = RATING[rating] || RATING.try;
-    var el = document.getElementById('kanji-clear-rating');
-    el.textContent = r.label;
-    el.className = 'kanji-clear-rating ' + r.cls;
-  }
-
   function showGameClear(ratings) {
     show('game-clear');
     var counts = { perfect: 0, good: 0, try: 0 };
@@ -61,7 +52,6 @@ var UI = (function () {
     setKanjiDisplay: setKanjiDisplay,
     setReadingDisplay: setReadingDisplay,
     setQuestionDisplay: setQuestionDisplay,
-    showKanjiClear: showKanjiClear,
     showGameClear: showGameClear,
     RATING: RATING
   };
